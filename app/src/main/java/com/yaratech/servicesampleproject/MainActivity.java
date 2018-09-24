@@ -24,30 +24,29 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         sumTextView = findViewById(R.id.sum_text_view);
-
-        if (!isMyServiceRunning(MyService.class)) {
-            final Handler handler = new Handler();
-            final Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    Random random = new Random();
-                    sum += 1;
-                    sumTextView.setText(sum + "");
-                    handler.postDelayed(this, DELAY);
-                }
-            };
-            handler.post(runnable);
-        } else{
+        Log.e("TAG", "onCreate: "+isMyServiceRunning(MyService.class) );
+        if (isMyServiceRunning(MyService.class)) {
             stopService(new Intent(this, MyService.class));
-
+            sum = MyThread.SUM.getInt(MAIN_ACTIVITY_TAG, 0);
+            Log.e("TAG", "onCreate: "+sum );
         }
+
+        final Handler handler = new Handler();
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                Random random = new Random();
+                sum += random.nextInt(100);
+                sumTextView.setText(sum + "");
+                handler.postDelayed(this, DELAY);
+            }
+        };
+        handler.post(runnable);
     }
 
     @Override
     protected void onStop() {
-        Log.e("Taaa", isMyServiceRunning(MyService.class)+"");
         Intent intent = new Intent(this, MyService.class);
-        Log.e("TAG", "onDestroy: " + sum);
         intent.putExtra(MAIN_ACTIVITY_TAG, sum);
         startService(intent);
         super.onStop();

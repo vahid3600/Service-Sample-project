@@ -21,13 +21,14 @@ public class MyService extends Service {
 
     public int sum;
     private Thread thread;
+    private MyThread myThread;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         sum = intent.getIntExtra(MainActivity.MAIN_ACTIVITY_TAG, 0);
-
-        thread = new Thread(new MyThread(getApplicationContext(), startId, sum));
+        myThread = new MyThread(getApplicationContext(), startId, sum);
+        thread = new Thread(myThread);
         thread.start();
 
         return START_STICKY;
@@ -40,12 +41,7 @@ public class MyService extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-        try {
-            thread.wait();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            myThread.onStopService();
     }
 
     @Nullable

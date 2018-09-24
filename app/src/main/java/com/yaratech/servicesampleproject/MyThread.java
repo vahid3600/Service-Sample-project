@@ -2,6 +2,7 @@ package com.yaratech.servicesampleproject;
 
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.NotificationCompat;
@@ -18,11 +19,13 @@ public class MyThread implements Runnable {
     int sum;
     Context context;
     NotificationManager notificationManager;
+    static SharedPreferences SUM;
 
     public MyThread(Context context, int serviceId, int sum) {
         this.serviceId = serviceId;
         this.sum = sum;
         this.context = context;
+        SUM = context.getSharedPreferences(MainActivity.MAIN_ACTIVITY_TAG, Context.MODE_PRIVATE);
     }
 
     @Override
@@ -32,7 +35,7 @@ public class MyThread implements Runnable {
             @Override
             public void run() {
                 Random random = new Random();
-                sum += 1;
+                sum += random.nextInt(100);
                 showNotification(sum+"");
                 handler.postDelayed(this, MainActivity.DELAY);
             }
@@ -48,5 +51,9 @@ public class MyThread implements Runnable {
         notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(1, nBuild.build());
+    }
+
+    void onStopService(){
+        SUM.edit().putInt(MainActivity.MAIN_ACTIVITY_TAG, sum).apply();
     }
 }
