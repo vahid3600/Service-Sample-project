@@ -16,6 +16,7 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = MainActivity.class.getSimpleName();
     TextView sumTextView;
     public static long DELAY = 10000;
     public int sum = 0;
@@ -28,28 +29,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         sumTextView = findViewById(R.id.sum_text_view);
-        if (isBind){
-            unbindService(mConnection);
-            isBind = false;
-        }
+        ComponentName myService = startService(new Intent(this, MyService.class));
+        bindService(new Intent(this, MyService.class), mConnection, BIND_AUTO_CREATE);
+        startService(Intent.makeMainActivity(myService));
 
-        final Handler handler = new Handler();
-        final Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                Random random = new Random();
-                sum += random.nextInt(100);
-                sumTextView.setText(sum + "");
-                handler.postDelayed(this, DELAY);
-            }
-        };
-        handler.post(runnable);
     }
 
     @Override
     protected void onStop() {
-        Intent intent = new Intent(this, MyService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        Log.e(TAG, "onStop: " );
         super.onStop();
     }
 
@@ -57,17 +45,30 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
 
-            MyService.LocalService localService = (MyService.LocalService) iBinder;
-            myService = localService.getService();
-            myService.startSumService(sum);
-            isBind = true;
+            final MyService.LocalService localService = (MyService.LocalService) iBinder;
+
+            final Handler handler = new Handler();
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    sum = localService.getService().sum;
+                    sum += new Random().nextInt(100);
+                    sumTextView.setText(sum + "");
+                    handler.postDelayed(this, DELAY);
+                }
+            };
+            handler.post(runnable);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            sum = myService.getSumValue();
-            Log.e("TAG", "onServiceDisconnected: "+sum );
-            isBind = false;
+            myService.stopSelf();
         }
     };
+
+    @Override
+    protected void onDestroy() {
+        unbindService(mConnection);
+        super.onDestroy();
+    }
 }
