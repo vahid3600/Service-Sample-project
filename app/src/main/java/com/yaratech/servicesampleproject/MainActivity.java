@@ -1,9 +1,12 @@
 package com.yaratech.servicesampleproject;
 
 import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,9 +17,10 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
 
     TextView sumTextView;
-    public static String MAIN_ACTIVITY_TAG = "MainActivity";
     public static long DELAY = 10000;
     public int sum = 0;
+    MyService myService;
+    boolean isBind = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,11 +28,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         sumTextView = findViewById(R.id.sum_text_view);
-        Log.e("TAG", "onCreate: "+isMyServiceRunning(MyService.class) );
-        if (isMyServiceRunning(MyService.class)) {
-            stopService(new Intent(this, MyService.class));
-            sum = MyThread.SUM.getInt(MAIN_ACTIVITY_TAG, 0);
-            Log.e("TAG", "onCreate: "+sum );
+        if (isBind){
+            unbindService(mConnection);
+            isBind = false;
         }
 
         final Handler handler = new Handler();
@@ -47,20 +49,25 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         Intent intent = new Intent(this, MyService.class);
-        intent.putExtra(MAIN_ACTIVITY_TAG, sum);
-        startService(intent);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         super.onStop();
     }
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                Log.i("isMyServiceRunning?", true + "");
-                return true;
-            }
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+
+            MyService.LocalService localService = (MyService.LocalService) iBinder;
+            myService = localService.getService();
+            myService.startSumService(sum);
+            isBind = true;
         }
-        Log.i("isMyServiceRunning?", false + "");
-        return false;
-    }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            sum = myService.getSumValue();
+            Log.e("TAG", "onServiceDisconnected: "+sum );
+            isBind = false;
+        }
+    };
 }

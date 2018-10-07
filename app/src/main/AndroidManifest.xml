@@ -11,8 +11,7 @@
         android:theme="@style/AppTheme">
 
         <service
-            android:name=".MyService"
-            android:exported="false" />
+            android:name=".MyService"/>
 
         <activity android:name=".MainActivity">
             <intent-filter>

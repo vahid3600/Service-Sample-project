@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -22,46 +23,33 @@ public class MyService extends Service {
     public int sum;
     private Thread thread;
     private MyThread myThread;
+    private final IBinder mBinder = new LocalService();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-        sum = intent.getIntExtra(MainActivity.MAIN_ACTIVITY_TAG, 0);
-        myThread = new MyThread(getApplicationContext(), startId, sum);
-        thread = new Thread(myThread);
-        thread.start();
-
         return START_STICKY;
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
-
-    @Override
-    public void onDestroy() {
-            myThread.onStopService();
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return mBinder;
     }
 
-    @Override
-    public void onTaskRemoved(Intent rootIntent){
-        Intent restartServiceIntent = new Intent(getApplicationContext(), this.getClass());
-        restartServiceIntent.setPackage(getPackageName());
+    public class LocalService extends Binder {
 
-        PendingIntent restartServicePendingIntent = PendingIntent.getService(getApplicationContext(), 1, restartServiceIntent, PendingIntent.FLAG_ONE_SHOT);
-        AlarmManager alarmService = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
-        alarmService.set(
-                AlarmManager.ELAPSED_REALTIME,
-                SystemClock.elapsedRealtime() + 1000,
-                restartServicePendingIntent);
+        MyService getService() {
+            return MyService.this;
+        }
+    }
 
-        super.onTaskRemoved(rootIntent);
+    public void startSumService(int sum){
+        myThread = new MyThread(getApplicationContext(), sum);
+        thread = new Thread(myThread);
+        thread.start();
+    }
+
+    public int getSumValue(){
+        return myThread.sum;
     }
 }

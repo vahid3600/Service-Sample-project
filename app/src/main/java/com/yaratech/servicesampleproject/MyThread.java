@@ -15,17 +15,15 @@ import java.util.Random;
 
 public class MyThread implements Runnable {
 
-    int serviceId;
     int sum;
     Context context;
     NotificationManager notificationManager;
     static SharedPreferences SUM;
 
-    public MyThread(Context context, int serviceId, int sum) {
-        this.serviceId = serviceId;
+    public MyThread(Context context,
+                    int sum) {
         this.sum = sum;
         this.context = context;
-        SUM = context.getSharedPreferences(MainActivity.MAIN_ACTIVITY_TAG, Context.MODE_PRIVATE);
     }
 
     @Override
@@ -53,7 +51,4 @@ public class MyThread implements Runnable {
         notificationManager.notify(1, nBuild.build());
     }
 
-    void onStopService(){
-        SUM.edit().putInt(MainActivity.MAIN_ACTIVITY_TAG, sum).apply();
-    }
 }
